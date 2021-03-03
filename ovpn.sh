@@ -98,12 +98,12 @@ adduser(){
 	# Generates the custom client.ovpn
 	new_client
 	echo
-  linktofile="$(curl -F "file=@/root/$client.ovpn" "https://file.io" | cut -b 46-73)"
+  linktofile="$(curl -F "file=@/root/$client.ovpn" "https://file.io" | jq ".link")"
 	echo "--------------------------------"
 	echo "-------------------------"
 	echo "----------------"
 	echo "---------"
-	echo -e "${Red}  $linktofile${Font_color_suffix} - ${Blue}Ссылка на OpenVPN ключ $client${Font_color_suffix}"
+	echo -e "${Red}$linktofile${Font_color_suffix} - ${Blue}Ссылка на OpenVPN ключ $client${Font_color_suffix}"
 	echo "---------"
 	echo "----------------"
 	echo "-------------------------"
@@ -113,8 +113,8 @@ uploadbase(){
 	echo -e "Выгрузка Базы OpenVPN в облако..." && echo
 	cd "/etc/"
 	tar -czvf "openvpn.tar.gz" "openvpn" && clear
-	upload_link="$(curl -F "file=@/etc/openvpn.tar.gz" "https://file.io" | cut -b 46-73)" && clear
-	echo -e "${Red} $upload_link${Font_color_suffix} - ${Blue}Ссылка на скачивание Базы OpenVPN
+	upload_link="$(curl -F "file=@/etc/openvpn.tar.gz" "https://file.io" | jq ".link")" && clear
+	echo -e "${Red}$upload_link${Font_color_suffix} - ${Blue}Ссылка на скачивание Базы OpenVPN
  База OpenVPN успешно выгружена!"${Font_color_suffix}
 	rm "openvpn.tar.gz"
 }
@@ -289,9 +289,9 @@ showlink(){
 		done
 		client=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | sed -n "$client_number"p)
 		echo
-		linktofile="$(curl -F "file=@/root/$client.ovpn" "https://file.io" | cut -b 46-73)"
+		linktofile="$(curl -F "file=@/root/$client.ovpn" "https://file.io" | jq ".link")"
 		clear
-		echo -e "${Red} $linktofile${Font_color_suffix} - ${Blue}Ссылка на ключ $client${Font_color_suffix}" && echo
+		echo -e "${Red}$linktofile${Font_color_suffix} - ${Blue}Ссылка на ключ $client${Font_color_suffix}" && echo
 		read -e -p "Хотите продолжить вывод ссылок на ключи?[Y/n]:" delyn
 		[[ -z ${delyn} ]] && delyn="y"
 		if [[ ${delyn} == [Nn] ]]; then
@@ -563,8 +563,10 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 LimitNPROC=infinity" > /etc/systemd/system/openvpn-server@server.service.d/disable-limitnproc.conf
 	fi
 	if [[ "$os" = "debian" || "$os" = "ubuntu" ]]; then
+	        Create_Aliases
+                source ~/.bash_aliases
 		apt-get update
-		apt-get install -y openvpn openssl ca-certificates $firewall
+		apt-get install -y jq openvpn openssl ca-certificates $firewall
 	elif [[ "$os" = "centos" ]]; then
 		yum install -y epel-release
 		yum install -y openvpn openssl ca-certificates tar $firewall
@@ -789,7 +791,6 @@ verb 3" > /etc/openvpn/server/client-common.txt
 	# Enable and start the OpenVPN service
 	systemctl enable --now openvpn-server@server.service
 	# Generates the custom client.ovpn
-	new_client
 	clear
 	echo
 	echo "Установка завершена!"
@@ -797,7 +798,7 @@ verb 3" > /etc/openvpn/server/client-common.txt
 else
 	serverip123="$(curl "ifconfig.me")"
 	number_of_clients=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep -c "^V")
-	number_of_active=$(cat /var/log/openvpn/openvpn-status.log | grep CLIENT_LIST | tail -n +2 | grep -c CLIENT_LIST)
+	number_of_active=$(cat /etc/openvpn/server/openvpn-status.log | grep CLIENT_LIST | tail -n +2 | grep -c CLIENT_LIST)
 	clear
 	echo
 	echo  -e "${Morg}${Blue}Chieftain && xyl1gun4eg && VeroN [OVpro Control]${Font_color_suffix} "
