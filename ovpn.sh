@@ -354,6 +354,22 @@ uninstallovpn(){
 			fi
 			exit
 }
+Create_Aliases(){
+	if ! { [[ -f ~/.bash_aliases ]] && grep -q "SSpro" ~/.bash_aliases; }; then
+		cat << EOF >> ~/.bash_aliases
+alias p='bash /root/SSpro/vpn.sh'
+alias o='bash /root/OVNpro/ovpn.sh'
+EOF
+		chmod 644 ~/.bash_aliases
+	fi
+
+	if ! { [[ -f ~/.bashrc ]] && grep -q "bash_aliases" ~/.bashrc; }; then
+		cat << EOF >> ~/.bashrc
+if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases fi
+EOF
+		chmod 644 ~/.bashrc
+	fi
+}
 fastexit(){
 	exit
 }
