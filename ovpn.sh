@@ -1,5 +1,5 @@
 #!/bin/bash
-# OVpro by Chieftain && xyl1gun4eg && VeroN
+# OVNpro by Chieftain && xyl1gun4eg && VeroN
 
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m" && Green="\033[32m" && Red="\033[31m" && Yellow="\033[33m" && Blue='\033[34m' && Purple='\033[35m' && Ocean='\033[36m' && Black='\033[37m' && Morg="\033[5m" && Reverse="\033[7m" && Font="\033[1m"
 sh_ver="7.7.7"
@@ -480,7 +480,7 @@ new_client () {
 if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 	apt install at
 	clear
-	echo 'Добро пожаловать в установщик OVpro (Разработчики: Chieftain && xyl1gun4eg && VeroN)!'
+	echo 'Добро пожаловать в установщик OVNpro (Разработчики: Chieftain && xyl1gun4eg && VeroN)!'
 	# If system has a single IPv4, it is selected automatically. Else, ask the user
 	if [[ $(ip -4 addr | grep inet | grep -vEc '127(\.[0-9]{1,3}){3}') -eq 1 ]]; then
 		ip=$(ip -4 addr | grep inet | grep -vE '127(\.[0-9]{1,3}){3}' | cut -d '/' -f 1 | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}')
@@ -824,7 +824,7 @@ else
 	number_of_active=$(cat /etc/openvpn/server/openvpn-status.log | grep CLIENT_LIST | tail -n +2 | grep -c CLIENT_LIST)
 	clear
 	echo
-	echo  -e "${Morg}${Blue}Chieftain && xyl1gun4eg && VeroN [OVpro Control]${Font_color_suffix} "
+	echo  -e "${Morg}${Blue}Chieftain && xyl1gun4eg && VeroN [OVNpro Control]${Font_color_suffix} "
 	echo
 echo -e "Приветствую, администратор сервера! Дата: ${Blue}$(date +"%d-%m-%Y")${Font_color_suffix}
 Всего ключей на сервере:" ${Blue}$number_of_clients${Font_color_suffix}
