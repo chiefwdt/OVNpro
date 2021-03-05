@@ -846,7 +846,7 @@ ${Blue}|————————————————————————
 |${Blue}8.${Font_color_suffix} ${Yellow}Auth${Font_color_suffix}                             |
 ${Blue}|————————————————————————————————————|${Font_color_suffix}"
 	read -p "Действие: " option
-	until [[ "$option" =~ ^[1-8]+$ ]]; do
+	until [[ "$option" =~ ^[0-8]+$ ]]; do
 		echo "$option: Выбор неверный"
 		read -p "Действие: " option
 	done
