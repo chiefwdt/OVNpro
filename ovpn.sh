@@ -194,6 +194,18 @@ tmp-dir /etc/openvpn/auth/tmp' >> /etc/openvpn/server/server.conf
 		echo "Отмена..." && exit 1
 	fi
 }
+get_login_list(){
+number_of_clients=$(tail /etc/openvpn/auth/users.pass | cut -d ':' -f 1 | nl -s ') ')
+	if [[ "$number_of_clients" = 0 ]]; then
+		echo
+		echo "Клиенты отсутствуют!"
+		exit
+	fi
+		echo
+		clear
+		echo "Клиенты на сервере:"
+		tail /etc/openvpn/auth/users.pass | cut -d ':' -f 1 | nl -s ') '
+}
 get_users_list(){
 	number_of_clients=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep -c "^V")
 	if [[ "$number_of_clients" = 0 ]]; then
@@ -206,24 +218,25 @@ get_users_list(){
 		echo "Клиенты на сервере:"
 		tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | nl -s ') '
 }
-#deletelogin(){
-#delete=$(sed 's/$login_number/ /g' < /etc/openvpn/auth/users.pass)
-#number_of_logins=$(tail /etc/openvpn/auth/users.pass | cut -d ':' -f 1 | nl -s ') ')
-#echo "Логин, подлежащий удалению:"
-#tail /etc/openvpn/auth/users.pass | cut -d ':' -f 1 | nl -s ') '
-#read -p "Логин: " login_number
-#login=$(tail /etc/openvpn/auth/users.pass | cut -d ':' -f 1 | sed -n "$login_number"p)
-#			read -p "Вы уверены,что хотите удалить логин $login ? [y/N]: " revoke
-#			until [[ "$revoke" =~ ^[yYnN]*$ ]]; do
-#				echo "$revoke: Ввод неверен"
-#				read -p "Вы уверены,что хотите удалить логин $login ? [y/N]: " revoke
-#			done
-#			if [[ "$revoke" =~ ^[yY]$ ]]; then
- #     cd /etc/openvpn/auth
-  #    sed "s/$login/ /g" < /etc/openvpn/auth/users.pass
-   #   fi
-    #  exit
-#}
+deletelogin(){
+delete=$(sed 's/$login_number/ /g' /etc/openvpn/auth/users.pass)
+number_of_logins=$(tail /etc/openvpn/auth/users.pass | cut -d ':' -f 1 | nl -s ') ')
+echo "Логин, подлежащий удалению:"
+tail /etc/openvpn/auth/users.pass | cut -d ':' -f 1 | nl -s ') '
+read -p "Логин: " login_number
+login=$(tail /etc/openvpn/auth/users.pass | sed -n "$login_number"p)
+			read -p "Вы уверены,что хотите удалить логин $login ? [y/N]: " revoke
+			until [[ "$revoke" =~ ^[yYnN]*$ ]]; do
+				echo "$revoke: Ввод неверен"
+				read -p "Вы уверены,что хотите удалить логин $login ? [y/N]: " revoke
+			done
+			if [[ "$revoke" =~ ^[yY]$ ]]; then
+      cd /etc/openvpn/auth
+      #sed "s/$login/ /g" /etc/openvpn/auth/users.pass
+      sed -i "s/$login/ /" /etc/openvpn/auth/users.pass
+      fi
+      exit
+}
 deleteuser(){
 				number_of_clients=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep -c "^V")
 			if [[ "$number_of_clients" = 0 ]]; then
@@ -258,14 +271,7 @@ deleteuser(){
 				rm "/root/$client.ovpn"
 				clear
 				echo "$client удален!"
-				read -e -p "Хотите продолжить удаление пользователей?[Y/n]:" delyn
-				[[ -z ${delyn} ]] && delyn="y"
-				if [[ ${delyn} == [Nn] ]]; then
-					exit
-				else
-					echo -e "${Info} Продолжение удаления пользователей..."
-					deleteuser
-				fi
+
 			else
 				echo
 				echo "Удаление $client отменено!"
@@ -812,6 +818,7 @@ verb 3" > /etc/openvpn/server/client-common.txt
 	echo "Установка завершена!"
 	echo "Для добавления клиентов, перезапустите скрипт"
 else
+  domainofserver=$(cat /etc/openvpn/server/client-common.txt | sed -n 6p | cut -d ' ' -f 2)
 	serverip123="$(curl "ifconfig.me")"
 	number_of_clients=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep -c "^V")
 	number_of_active=$(cat /etc/openvpn/server/openvpn-status.log | grep CLIENT_LIST | tail -n +2 | grep -c CLIENT_LIST)
@@ -824,6 +831,7 @@ echo -e "Приветствую, администратор сервера! Да
 echo -e "Всего подключенных пользователей:" ${Blue}$number_of_active${Font_color_suffix}
   echo -e "
 IP сервера: ${Blue}$serverip123${Font_color_suffix}
+Ты на сервере: ${Blue}$domainofserver${Font_color_suffix}
 ${Blue}|————————————————————————————————————|${Font_color_suffix}
 |${Blue}————————${Font_color_suffix} Управление ключами ${Blue}————————${Font_color_suffix}|
 |${Blue}1.${Font_color_suffix} ${Yellow}Создать ключ${Font_color_suffix}                     |
@@ -836,24 +844,24 @@ ${Blue}|————————————————————————
 |${Blue}————————${Font_color_suffix} Управление скриптом ${Blue}———————${Font_color_suffix}|
 |${Blue}7.${Font_color_suffix} ${Yellow}Удалить OpenVPN${Font_color_suffix}                  |
 |${Blue}8.${Font_color_suffix} ${Yellow}Auth${Font_color_suffix}                             |
-|${Blue}——————————${Font_color_suffix} Автоматизация ${Blue}———————————${Font_color_suffix}|
-|${Blue}9.${Font_color_suffix} ${Yellow}Просмотр дней${Font_color_suffix}                    |
-|${Blue}10.${Font_color_suffix} ${Yellow}Настроить автоудаление${Font_color_suffix}          |
 ${Blue}|————————————————————————————————————|${Font_color_suffix}"
 	read -p "Действие: " option
-	until [[ "$option" =~ ^[0-9]+$ ]]; do
+	until [[ "$option" =~ ^[1-8]+$ ]]; do
 		echo "$option: Выбор неверный"
 		read -p "Действие: " option
 	done
 	case "$option" in
+	  0)
+	  deleteuser
+	  ;;
 		1)
 		adduser
 		;;
 		2)
-		deleteuser
+		deletelogin
 		;;
 		3)
-		get_users_list
+		get_login_list
 		;;
 		4)
 		showlink
@@ -869,11 +877,5 @@ ${Blue}|————————————————————————
 		;;
 		8)
 		userpass
-		;;
-		9)
-		checkdeletetime
-		;;
-		10)
-		confautodel
 	esac
 fi
