@@ -75,35 +75,36 @@ fi
 
 adduser(){
 	echo
-	echo "Введите имя для клиента:"
-	read -p "Имя: " unsanitized_client
+	#echo "Введите имя для клиента:"
+	#read -p "Имя: " unsanitized_client
 	read -p "Логин: " auth1_client
 	read -p "Пароль: " auth2_client
-	client=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]/_/g' <<< "$unsanitized_client")
-	while [[ -z "$client" || -e /etc/openvpn/server/easy-rsa/pki/issued/"$client".crt ]]; do
-		echo "$client: Неправильно введено имя"
-		read -p "Имя: " unsanitized_client
-		client=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]/_/g' <<< "$unsanitized_client")
+	#client=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]/_/g' <<< "$unsanitized_client")
+	#while [[ -z "$client" || -e /etc/openvpn/server/easy-rsa/pki/issued/"$client".crt ]]; do
+	#	echo "$client: Неправильно введено имя"
+		#read -p "Имя: " unsanitized_client
+		#client=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]/_/g' <<< "$unsanitized_client")
 	  client1=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]/_/g' <<< "$auth1_client")
 	  client2=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]/_/g' <<< "$auth2_client")
-	done
+	#done
 	client1=$auth1_client
 	client2=$auth2_client
 	client3=$auth1_client:$auth2_client
 	cd /etc/openvpn/auth/
 	echo "$client3" >> users.pass
-	client=$(echo "${client}_$(date +"%d-%m")")
-	cd /etc/openvpn/server/easy-rsa/
-	EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-client-full "$client" nopass
+	#client=$(echo "${client}_$(date +"%d-%m")")
+	#cd /etc/openvpn/server/easy-rsa/
+	#EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-client-full "$client" nopass
 	# Generates the custom client.ovpn
-	new_client
+	clear
+	#new_client
 	echo
-  linktofile="$(curl -F "file=@/root/$client.ovpn" "https://file.io" | jq ".link")"
+  linktofile="$(curl -F "file=@/root/Admin.ovpn" "https://file.io" | jq ".link")"
 	echo "--------------------------------"
 	echo "-------------------------"
 	echo "----------------"
 	echo "---------"
-	echo -e "${Red}$linktofile${Font_color_suffix} - ${Blue}Ссылка на OpenVPN ключ $client${Font_color_suffix}"
+	echo -e "${Red}$linktofile${Font_color_suffix} - ${Blue}Ссылка на OpenVPN ключ${Font_color_suffix}"
 	echo "---------"
 	echo "----------------"
 	echo "-------------------------"
@@ -111,6 +112,8 @@ adduser(){
 }
 uploadbase(){
 	echo -e "Выгрузка Базы OpenVPN в облако..." && echo
+	cd "/root/"
+	cp "Admin.ovpn" "/etc/openvpn"
 	cd "/etc/"
 	tar -czvf "openvpn.tar.gz" "openvpn" && clear
 	upload_link="$(curl -F "file=@/etc/openvpn.tar.gz" "https://file.io" | jq ".link")" && clear
@@ -187,6 +190,10 @@ auth-user-pass-verify /etc/openvpn/auth/verify.sh via-file
 verify-client-cert none
 username-as-common-name
 tmp-dir /etc/openvpn/auth/tmp' >> /etc/openvpn/server/server.conf
+      cd "/etc/openvpn"
+      mv "Admin.ovpn" "/root/"
+      sudo chmod a+x /etc/openvpn/auth/verify.sh
+      sudo chmod a+w /etc/openvpn/auth/tmp
 			sudo systemctl start openvpn-server@server.service
 			echo "Перенос базы завершен успешно"
 		fi
@@ -195,7 +202,7 @@ tmp-dir /etc/openvpn/auth/tmp' >> /etc/openvpn/server/server.conf
 	fi
 }
 get_login_list(){
-number_of_clients=$(tail /etc/openvpn/auth/users.pass | cut -d ':' -f 1 | nl -s ') ')
+number_of_clients=$(cat /etc/openvpn/auth/users.pass | wc -l)
 	if [[ "$number_of_clients" = 0 ]]; then
 		echo
 		echo "Клиенты отсутствуют!"
@@ -204,7 +211,7 @@ number_of_clients=$(tail /etc/openvpn/auth/users.pass | cut -d ':' -f 1 | nl -s 
 		echo
 		clear
 		echo "Клиенты на сервере:"
-		tail /etc/openvpn/auth/users.pass | cut -d ':' -f 1 | nl -s ') '
+		cat /etc/openvpn/auth/users.pass | wc -l
 }
 get_users_list(){
 	number_of_clients=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep -c "^V")
@@ -219,7 +226,7 @@ get_users_list(){
 		tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | nl -s ') '
 }
 deletelogin(){
-delete=$(sed 's/$login_number/ /g' /etc/openvpn/auth/users.pass)
+#delete=$(sed 's/$login_number/ /g' /etc/openvpn/auth/users.pass)
 number_of_logins=$(tail /etc/openvpn/auth/users.pass | cut -d ':' -f 1 | nl -s ') ')
 echo "Логин, подлежащий удалению:"
 tail /etc/openvpn/auth/users.pass | cut -d ':' -f 1 | nl -s ') '
@@ -231,9 +238,12 @@ login=$(tail /etc/openvpn/auth/users.pass | sed -n "$login_number"p)
 				read -p "Вы уверены,что хотите удалить логин $login ? [y/N]: " revoke
 			done
 			if [[ "$revoke" =~ ^[yY]$ ]]; then
-      cd /etc/openvpn/auth
+      #cd /etc/openvpn/auth
       #sed "s/$login/ /g" /etc/openvpn/auth/users.pass
-      sed -i "s/$login/ /" /etc/openvpn/auth/users.pass
+      #sed -i "s/$login/ /" /etc/openvpn/auth/users.pass
+      sed -i "/$login/d" /etc/openvpn/auth/users.pass
+      echo "Удаление успешно завершено!"
+      #sudo systemctl restart openvpn-server@server.service
       fi
       exit
 }
@@ -285,27 +295,19 @@ showlink(){
 		echo "Клиенты отсутствуют!"
 		exit
 	fi
+		#echo
+		#echo "Какой ключ вы хотите получить?:"
+		#tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | nl -s ') '
+		#read -p "Клиент: " client_number
+		#until [[ "$client_number" =~ ^[0-9]+$ && "$client_number" -le "$number_of_clients" ]]; do
+			#echo "$client_number: Ввод неверен"
+			#read -p "Клиент: " client_number
+		#done
+		#client=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | sed -n "$client_number"p)
 		echo
-		echo "Какой ключ вы хотите получить?:"
-		tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | nl -s ') '
-		read -p "Клиент: " client_number
-		until [[ "$client_number" =~ ^[0-9]+$ && "$client_number" -le "$number_of_clients" ]]; do
-			echo "$client_number: Ввод неверен"
-			read -p "Клиент: " client_number
-		done
-		client=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | sed -n "$client_number"p)
-		echo
-		linktofile="$(curl -F "file=@/root/$client.ovpn" "https://file.io" | jq ".link")"
+		linktofile="$(curl -F "file=@/root/Admin.ovpn" "https://file.io" | jq ".link")"
 		clear
-		echo -e "${Red}$linktofile${Font_color_suffix} - ${Blue}Ссылка на ключ $client${Font_color_suffix}" && echo
-		read -e -p "Хотите продолжить вывод ссылок на ключи?[Y/n]:" delyn
-		[[ -z ${delyn} ]] && delyn="y"
-		if [[ ${delyn} == [Nn] ]]; then
-				exit
-		else
-				echo -e "${Info} Продолжение выдачи ссылок на ключей..."
-				showlink
-		fi
+		echo -e "${Red}$linktofile${Font_color_suffix} - ${Blue}Ссылка на OpenVPN ключ${Font_color_suffix}" && echo
 }
 uninstallovpn(){
 				echo
@@ -352,6 +354,7 @@ uninstallovpn(){
 				fi
 				echo
 				rm -R "/var/log/openvpn"
+				rm -R "/etc/openvpn"
 				cd "/root" && rm *.ovpn
 				echo "OpenVPN удален!"
 			else
@@ -475,7 +478,7 @@ new_client () {
 	echo "<tls-crypt>"
 	sed -ne '/BEGIN OpenVPN Static key/,$ p' /etc/openvpn/server/tc.key
 	echo "</tls-crypt>"
-	} > ~/"$client".ovpn
+	} > ~/"Admin".ovpn
 }
 if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 	apt install at
@@ -563,7 +566,7 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 	echo
 	echo "Введите имя для первого клиента:"
 	read -p "Имя [По умолчанию: Admin]: " unsanitized_client
-	# Allow a limited set of characters to avoid conflicts
+	 #Allow a limited set of characters to avoid conflicts
 	client=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]/_/g' <<< "$unsanitized_client")
 	[[ -z "$client" ]] && client="Admin"
 	echo
@@ -610,7 +613,7 @@ LimitNPROC=infinity" > /etc/systemd/system/openvpn-server@server.service.d/disab
 	./easyrsa init-pki
 	./easyrsa --batch build-ca nopass
 	EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-server-full server nopass
-	EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-client-full "$client" nopass
+	EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-client-full "Admin" nopass
 	EASYRSA_CRL_DAYS=3650 ./easyrsa gen-crl
 	# Move the stuff we need
 	cp pki/ca.crt pki/private/ca.key pki/issued/server.crt pki/private/server.key pki/crl.pem /etc/openvpn/server
@@ -813,22 +816,21 @@ verb 3" > /etc/openvpn/server/client-common.txt
 	# Enable and start the OpenVPN service
 	systemctl enable --now openvpn-server@server.service
 	# Generates the custom client.ovpn
+	new_client
 	clear
-	echo
 	echo "Установка завершена!"
 	echo "Для добавления клиентов, перезапустите скрипт"
 else
   domainofserver=$(cat /etc/openvpn/server/client-common.txt | sed -n 6p | cut -d ' ' -f 2)
 	serverip123="$(curl "ifconfig.me")"
-	number_of_clients=$(tail -n +2 /etc/openvpn/server/easy-rsa/pki/index.txt | grep -c "^V")
-	number_of_active=$(cat /etc/openvpn/server/openvpn-status.log | grep CLIENT_LIST | tail -n +2 | grep -c CLIENT_LIST)
+	number_of_clients=$(cat /etc/openvpn/auth/users.pass | wc -l)
+	#number_of_active=$(cat /etc/openvpn/server/openvpn-status.log | grep CLIENT_LIST | tail -n +2 | grep -c CLIENT_LIST)
 	clear
 	echo
 	echo  -e "${Morg}${Blue}Chieftain && xyl1gun4eg && VeroN [OVNpro Control]${Font_color_suffix} "
 	echo
 echo -e "Приветствую, администратор сервера! Дата: ${Blue}$(date +"%d-%m-%Y")${Font_color_suffix}
 Всего ключей на сервере:" ${Blue}$number_of_clients${Font_color_suffix}
-echo -e "Всего подключенных пользователей:" ${Blue}$number_of_active${Font_color_suffix}
   echo -e "
 IP сервера: ${Blue}$serverip123${Font_color_suffix}
 Ты на сервере: ${Blue}$domainofserver${Font_color_suffix}
@@ -837,7 +839,7 @@ ${Blue}|————————————————————————
 |${Blue}1.${Font_color_suffix} ${Yellow}Создать ключ${Font_color_suffix}                     |
 |${Blue}2.${Font_color_suffix} ${Yellow}Удалить ключ${Font_color_suffix}                     |
 |${Blue}3.${Font_color_suffix} ${Yellow}Получить список клиентов${Font_color_suffix}         |
-|${Blue}4.${Font_color_suffix} ${Yellow}Получить ссылки на ключи${Font_color_suffix}         |
+|${Blue}4.${Font_color_suffix} ${Yellow}Получить ссылку на ключ${Font_color_suffix}         |
 |${Blue}————————${Font_color_suffix} Управление базой ${Blue}——————————${Font_color_suffix}|
 |${Blue}5.${Font_color_suffix} ${Yellow}Выгрузить Базу${Font_color_suffix}                   |
 |${Blue}6.${Font_color_suffix} ${Yellow}Загрузить Базу${Font_color_suffix}                   |
